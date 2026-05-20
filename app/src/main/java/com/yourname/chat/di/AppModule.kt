@@ -10,11 +10,11 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
 import com.yourname.chat.data.local.MainDb
 import com.yourname.chat.data.local.MessageDao
-import com.yourname.chat.data.repository.AuthRepository
+import com.yourname.chat.domain.repository.AuthRepository
 import com.yourname.chat.data.repository.AuthRepositoryImpl
-import com.yourname.chat.data.repository.MessageRepository
+import com.yourname.chat.domain.repository.MessageRepository
 import com.yourname.chat.data.repository.MessageRepositoryImpl
-import com.yourname.chat.data.repository.UserRepository
+import com.yourname.chat.domain.repository.UserRepository
 import com.yourname.chat.data.repository.UserRepositoryImpl
 import com.yourname.chat.utils.CryptoManager
 import com.yourname.chat.utils.ServerTimeManager

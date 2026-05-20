@@ -1,6 +1,5 @@
-package com.yourname.chat.data.repository
+package com.yourname.chat.domain.repository
 
-import com.google.crypto.tink.KeysetHandle
 import com.yourname.chat.data.local.MessageEntity
 import com.yourname.chat.data.model.message.Message
 import kotlinx.coroutines.flow.Flow

@@ -1,4 +1,4 @@
-package com.yourname.chat.data.repository
+package com.yourname.chat.domain.repository
 
 import com.google.firebase.auth.FirebaseUser
 

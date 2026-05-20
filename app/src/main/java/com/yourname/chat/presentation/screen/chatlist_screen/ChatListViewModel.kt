@@ -1,13 +1,11 @@
 package com.yourname.chat.presentation.screen.chatlist_screen
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import com.yourname.chat.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yourname.chat.data.model.message.Message
-import com.yourname.chat.data.repository.MessageRepository
-import com.yourname.chat.data.repository.UserRepository
+import com.yourname.chat.domain.repository.MessageRepository
+import com.yourname.chat.domain.repository.UserRepository
 import com.yourname.chat.ui.theme.PrimaryColor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted

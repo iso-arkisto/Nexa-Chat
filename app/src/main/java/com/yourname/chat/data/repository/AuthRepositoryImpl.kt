@@ -1,14 +1,13 @@
 package com.yourname.chat.data.repository
 
-import android.content.Context
 import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
 import com.yourname.chat.data.model.user.User
 import com.yourname.chat.data.model.user.UserCore
+import com.yourname.chat.domain.repository.AuthRepository
 import com.yourname.chat.utils.CryptoManager
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
 import java.util.Locale
 import javax.inject.Inject

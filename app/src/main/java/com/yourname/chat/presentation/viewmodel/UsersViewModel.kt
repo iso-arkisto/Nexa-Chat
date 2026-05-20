@@ -3,9 +3,8 @@ package com.yourname.chat.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yourname.chat.data.model.user.BanData
-import com.yourname.chat.data.model.user.PrivacySetting
 import com.yourname.chat.data.model.user.User
-import com.yourname.chat.data.repository.UserRepository
+import com.yourname.chat.domain.repository.UserRepository
 import com.yourname.chat.domain.CheckUserAccessUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
