@@ -31,7 +31,7 @@ import com.yourname.chat.presentation.screen.ban_screen.BanViewModel
 import com.yourname.chat.utils.toFullDateString
 import com.yourname.chat.utils.toShortTimeString
 import kotlinx.coroutines.delay
-import com.yourname.chat.utils.ServerTimeManager
+import com.yourname.chat.data.manager.ServerTimeManager
 
 @Composable
 fun BanScreen(

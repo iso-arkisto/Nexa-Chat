@@ -1,4 +1,4 @@
-package com.yourname.chat.utils
+package com.yourname.chat.data.manager
 
 import android.content.Context
 import android.util.Base64

@@ -16,8 +16,8 @@ import com.yourname.chat.domain.repository.MessageRepository
 import com.yourname.chat.data.repository.MessageRepositoryImpl
 import com.yourname.chat.domain.repository.UserRepository
 import com.yourname.chat.data.repository.UserRepositoryImpl
-import com.yourname.chat.utils.CryptoManager
-import com.yourname.chat.utils.ServerTimeManager
+import com.yourname.chat.data.manager.CryptoManager
+import com.yourname.chat.data.manager.ServerTimeManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
