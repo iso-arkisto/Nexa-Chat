@@ -1,9 +1,8 @@
-package com.yourname.chat.data.repository
+package com.yourname.chat.domain.repository
 
 import com.yourname.chat.data.model.user.BanData
 import com.yourname.chat.data.model.user.User
 import com.yourname.chat.data.model.user.UserStatus
-import com.yourname.chat.presentation.screen.chatlist_screen.UserChatUiState
 import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {

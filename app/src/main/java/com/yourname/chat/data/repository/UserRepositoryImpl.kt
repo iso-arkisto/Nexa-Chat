@@ -15,7 +15,7 @@ import com.yourname.chat.data.model.user.BanData
 import com.yourname.chat.data.model.message.Message
 import com.yourname.chat.data.model.user.User
 import com.yourname.chat.data.model.user.UserStatus
-import com.yourname.chat.presentation.screen.chatlist_screen.UserChatUiState
+import com.yourname.chat.domain.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import kotlinx.coroutines.channels.awaitClose

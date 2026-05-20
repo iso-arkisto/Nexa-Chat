@@ -4,8 +4,8 @@ import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yourname.chat.data.remote.UserPresenceManager
-import com.yourname.chat.data.repository.AuthRepository
-import com.yourname.chat.data.repository.UserRepository
+import com.yourname.chat.domain.repository.AuthRepository
+import com.yourname.chat.domain.repository.UserRepository
 import com.yourname.chat.utils.Screen
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
