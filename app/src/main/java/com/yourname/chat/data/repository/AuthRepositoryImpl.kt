@@ -7,7 +7,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.yourname.chat.data.model.user.User
 import com.yourname.chat.data.model.user.UserCore
 import com.yourname.chat.domain.repository.AuthRepository
-import com.yourname.chat.utils.CryptoManager
+import com.yourname.chat.data.manager.CryptoManager
 import kotlinx.coroutines.tasks.await
 import java.util.Locale
 import javax.inject.Inject

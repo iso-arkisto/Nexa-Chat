@@ -41,7 +41,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yourname.chat.data.model.chat.Chat
 import com.yourname.chat.ui.theme.PrimaryColor
 import com.yourname.chat.R
-import com.yourname.chat.utils.ServerTimeManager
+import com.yourname.chat.data.manager.ServerTimeManager
 import com.yourname.chat.utils.toShortTimeString
 import kotlinx.coroutines.delay
 

@@ -11,7 +11,7 @@ import com.yourname.chat.data.local.MessageEntity
 import com.yourname.chat.data.model.message.Message
 import com.yourname.chat.data.model.user.User
 import com.yourname.chat.domain.repository.MessageRepository
-import com.yourname.chat.utils.CryptoManager
+import com.yourname.chat.data.manager.CryptoManager
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow

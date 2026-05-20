@@ -1,4 +1,4 @@
-package com.yourname.chat.utils
+package com.yourname.chat.data.manager
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf

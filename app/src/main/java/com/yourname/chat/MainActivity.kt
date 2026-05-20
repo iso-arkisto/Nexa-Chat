@@ -6,7 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import com.yourname.chat.data.remote.UserPresenceManager
-import com.yourname.chat.utils.ServerTimeManager
+import com.yourname.chat.data.manager.ServerTimeManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 @AndroidEntryPoint
