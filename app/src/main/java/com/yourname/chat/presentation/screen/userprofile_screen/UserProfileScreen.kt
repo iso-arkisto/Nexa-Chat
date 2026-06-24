@@ -12,7 +12,6 @@ import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,13 +36,8 @@ fun UserProfileScreen(
     onChatClick: (String) -> Unit,
     viewModel: UserProfileViewModel = hiltViewModel()
 ) {
-    val userProfileState by viewModel.userState.collectAsStateWithLifecycle()
-    val currentUserState by viewModel.currentUser.collectAsStateWithLifecycle()
-    val userStatusState by viewModel.userStatus.collectAsStateWithLifecycle()
-
-    val userProfile = userProfileState
-    val currentUser = currentUserState
-    val userStatus = userStatusState
+    val uiState = viewModel.uiState.collectAsStateWithLifecycle()
+    val state = uiState.value
 
     val context = LocalContext.current
 
@@ -57,7 +51,7 @@ fun UserProfileScreen(
         }
     }
 
-    if(userProfile!=null && currentUser!=null) {
+    if(state.targetUser!=null && state.currentUser!=null && !state.isLoading) {
 
            Column(
                modifier = Modifier
@@ -82,12 +76,12 @@ fun UserProfileScreen(
                    Box(contentAlignment = Alignment.BottomEnd) {
 
                        AvatarCircle(
-                           letter = userProfile.core.displayName.take(1),
+                           letter = state.targetUser.core.displayName.take(1),
                            color = PrimaryColor,
                            size = 125
                        )
 
-                       if(userStatus?.state == "online") {
+                       if(state.userStatus?.state == "online") {
                            Box(
                                modifier = Modifier
                                    .size(24.dp)
@@ -110,12 +104,12 @@ fun UserProfileScreen(
 
                Row(verticalAlignment = Alignment.CenterVertically) {
                    Text(
-                       text = userProfile.core.displayName,
+                       text = state.targetUser.core.displayName,
                        fontSize = 24.sp,
                        fontWeight = FontWeight.Bold,
                        color = MaterialTheme.colorScheme.onSurface
                    )
-                   if(userProfile.core.verified) {
+                   if(state.targetUser.core.verified) {
                        Spacer(modifier = Modifier.width(6.dp))
                        Icon(
                            painter = painterResource(R.drawable.check_circle),
@@ -126,20 +120,20 @@ fun UserProfileScreen(
                    }
                }
 
-               if(userProfile.core.username!=null) {
+               if(state.targetUser.core.username!=null) {
                    Text(
-                       text = "@${userProfile.core.username}",
+                       text = "@${state.targetUser.core.username}",
                        fontSize = 16.sp,
                        color = Color.Gray
                    )
                }
 
                if(
-                   userProfile.core.customStatus != null ||
-                   userStatus?.geo != null ||
-                   uvm.checkAccess(userProfile, userProfile.privacy.privacyEmail, currentUser) ||
-                   (uvm.checkAccess(userProfile, userProfile.privacy.privacyPhoneNumber, currentUser) && userProfile.core.phoneNumber!=null) ||
-                   userProfile.core.bio.isNotBlank()
+                   state.targetUser.core.customStatus != null ||
+                   state.userStatus?.geo != null ||
+                   uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyEmail, state.currentUser) ||
+                   (uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyPhoneNumber, state.currentUser) && state.targetUser.core.phoneNumber!=null) ||
+                   state.targetUser.core.bio.isNotBlank()
                ) {
                    Spacer(modifier = Modifier.height(24.dp))
 
@@ -149,38 +143,38 @@ fun UserProfileScreen(
                        shadowElevation = 2.dp
                    ) {
                        Column(modifier = Modifier.padding(20.dp)) {
-                           if(userProfile.core.customStatus!=null) {
+                           if(state.targetUser.core.customStatus!=null) {
                                ProfileInfoRow(
-                                   userProfile.core.customStatus,
+                                   state.targetUser.core.customStatus,
                                    R.drawable.check_circle
                                )
                            }
 
 
-                           if(userStatus?.geo!=null) {
+                           if(state.userStatus?.geo!=null) {
                                ProfileInfoRow(
-                                   "${userStatus.geo.latitude}, ${userStatus.geo.longitude}",
+                                   "${state.userStatus.geo.latitude}, ${state.userStatus.geo.longitude}",
                                    R.drawable.location_geo
                                )
                            }
 
 
-                           if(uvm.checkAccess(userProfile, userProfile.privacy.privacyEmail, currentUser)) {
+                           if(uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyEmail, state.currentUser)) {
                                ProfileInfoRow(
-                                   userProfile.core.email,
+                                   state.targetUser.core.email,
                                    R.drawable.mail
                                )
                            }
 
-                           if(uvm.checkAccess(userProfile, userProfile.privacy.privacyPhoneNumber, currentUser) && userProfile.core.phoneNumber!=null) {
+                           if(uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyPhoneNumber, state.currentUser) && state.targetUser.core.phoneNumber!=null) {
                                ProfileInfoRow(
-                                   "+${userProfile.core.phoneNumber}",
+                                   "+${state.targetUser.core.phoneNumber}",
                                    R.drawable.local_phone
                                )
                            }
 
                            Text(
-                               text = userProfile.core.bio,
+                               text = state.targetUser.core.bio,
                                fontSize = 17.sp,
                                lineHeight = 20.sp
                            )
@@ -196,7 +190,7 @@ fun UserProfileScreen(
                ) {
                    Button(
                        onClick = {
-                           onChatClick(userProfile.core.uid)
+                           onChatClick(state.targetUser.core.uid)
                        },
                        modifier = Modifier
                            .weight(1f)
@@ -217,7 +211,7 @@ fun UserProfileScreen(
                        )
                    }
 
-                   if(userProfile.core.uid != currentUser.core.uid) {
+                   if(state.targetUser.core.uid != state.currentUser.core.uid) {
                        FilledTonalButton(
                            onClick = { viewModel.addFriend() },
                            modifier = Modifier
@@ -228,9 +222,9 @@ fun UserProfileScreen(
                        ) {
                            Icon(
                                imageVector = when {
-                                   userProfile.social.friends.contains(currentUser.core.uid) || currentUser.social.friends.contains(userProfile.core.uid) -> Icons.Default.Close
-                                   userProfile.social.pendingFriendshipRequests.contains(currentUser.core.uid) -> Icons.Default.Close
-                                   currentUser.social.pendingFriendshipRequests.contains(userProfile.core.uid) -> Icons.Default.Done
+                                   state.targetUser.social.friends.contains(state.currentUser.core.uid) || state.currentUser.social.friends.contains(state.targetUser.core.uid) -> Icons.Default.Close
+                                   state.targetUser.social.pendingFriendshipRequests.contains(state.currentUser.core.uid) -> Icons.Default.Close
+                                   state.currentUser.social.pendingFriendshipRequests.contains(state.targetUser.core.uid) -> Icons.Default.Done
                                    else -> Icons.Default.Add
                                },
                                contentDescription = null,
@@ -240,9 +234,9 @@ fun UserProfileScreen(
                            Text(
                                text = stringResource(
                                    when {
-                                       userProfile.social.friends.contains(currentUser.core.uid) || currentUser.social.friends.contains(userProfile.core.uid) -> R.string.remove_friend
-                                       userProfile.social.pendingFriendshipRequests.contains(currentUser.core.uid) -> R.string.cancel_friend_request
-                                       currentUser.social.pendingFriendshipRequests.contains(userProfile.core.uid) -> R.string.accept_friend_request
+                                       state.targetUser.social.friends.contains(state.currentUser.core.uid) || state.currentUser.social.friends.contains(state.targetUser.core.uid) -> R.string.remove_friend
+                                       state.targetUser.social.pendingFriendshipRequests.contains(state.currentUser.core.uid) -> R.string.cancel_friend_request
+                                       state.currentUser.social.pendingFriendshipRequests.contains(state.targetUser.core.uid) -> R.string.accept_friend_request
                                        else -> R.string.add_to_friends
                                    }
                                ),

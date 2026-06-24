@@ -7,6 +7,9 @@ import com.yourname.chat.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.WhileSubscribed
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -23,31 +26,28 @@ class UserProfileViewModel @Inject constructor(
     private val _uiEvent = Channel<UserProfileUiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
 
-    val userState = repository.getUserData(userId)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
+    val uiState: StateFlow<UserProfileUiState> = combine(
+        repository.getUserData(userId),
+        repository.getCurrentUserData(),
+        repository.getUserStatus(userId)
+    ) { targetUser, currentUser, userStatus ->
+        UserProfileUiState(
+            isLoading = false,
+            targetUser = targetUser,
+            currentUser = currentUser,
+            userStatus = userStatus
         )
-
-    val currentUser = repository.getCurrentUserData()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
-    val userStatus = repository.getUserStatus(userId)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = UserProfileUiState(isLoading = true)
+    )
 
     fun addFriend() {
         viewModelScope.launch {
-
-            val currentUser = repository.getCurrentUserData().first()
-            val targetUser = repository.getUserData(userId).first()
+            val state = uiState.value
+            val currentUser = state.currentUser
+            val targetUser = state.targetUser
 
             if(currentUser == null || targetUser == null) {
                 sendUiEvent(UserProfileUiEvent.ShowToast("User data not available"))
@@ -60,7 +60,7 @@ class UserProfileViewModel @Inject constructor(
             }
 
             repository.addFriend(currentUser, targetUser).onFailure { exception ->
-                sendUiEvent(UserProfileUiEvent.ShowToast("Failed to interact with Friend button. Error: ${exception.message}"))
+                sendUiEvent(UserProfileUiEvent.ShowToast("Failed: ${exception.message}"))
             }
         }
     }
