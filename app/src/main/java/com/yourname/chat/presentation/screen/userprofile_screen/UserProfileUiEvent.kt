@@ -1,7 +1,7 @@
 package com.yourname.chat.presentation.screen.userprofile_screen
 
-sealed class UserProfileUiState {
+sealed class UserProfileUiEvent {
     data class ShowToast(
         val text: String
-    ): UserProfileUiState()
+    ): UserProfileUiEvent()
 }

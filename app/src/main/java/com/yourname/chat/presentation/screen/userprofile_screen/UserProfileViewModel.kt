@@ -20,7 +20,7 @@ class UserProfileViewModel @Inject constructor(
 ): ViewModel() {
     val userId: String = checkNotNull(savedStateHandle["userId"])
 
-    private val _uiEvent = Channel<UserProfileUiState>()
+    private val _uiEvent = Channel<UserProfileUiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
 
     val userState = repository.getUserData(userId)
@@ -50,22 +50,22 @@ class UserProfileViewModel @Inject constructor(
             val targetUser = repository.getUserData(userId).first()
 
             if(currentUser == null || targetUser == null) {
-                sendUiEvent(UserProfileUiState.ShowToast("User data not available"))
+                sendUiEvent(UserProfileUiEvent.ShowToast("User data not available"))
                 return@launch
             }
 
             if(currentUser.core.uid == targetUser.core.uid) {
-                sendUiEvent(UserProfileUiState.ShowToast("You can't be your own friend"))
+                sendUiEvent(UserProfileUiEvent.ShowToast("You can't be your own friend"))
                 return@launch
             }
 
             repository.addFriend(currentUser, targetUser).onFailure { exception ->
-                sendUiEvent(UserProfileUiState.ShowToast("Failed to interact with Friend button. Error: ${exception.message}"))
+                sendUiEvent(UserProfileUiEvent.ShowToast("Failed to interact with Friend button. Error: ${exception.message}"))
             }
         }
     }
 
-    private fun sendUiEvent(event: UserProfileUiState) {
+    private fun sendUiEvent(event: UserProfileUiEvent) {
         viewModelScope.launch {
             _uiEvent.send(event)
         }

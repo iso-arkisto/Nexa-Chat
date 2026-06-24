@@ -50,7 +50,7 @@ fun UserProfileScreen(
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when(event) {
-                is UserProfileUiState.ShowToast -> {
+                is UserProfileUiEvent.ShowToast -> {
                     Toast.makeText(context, event.text, Toast.LENGTH_SHORT).show()
                 }
             }
