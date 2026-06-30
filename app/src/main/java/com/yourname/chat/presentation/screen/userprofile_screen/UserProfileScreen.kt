@@ -1,8 +1,10 @@
 package com.yourname.chat.presentation.screen.userprofile_screen
 
+import android.widget.Space
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -20,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -51,207 +54,243 @@ fun UserProfileScreen(
         }
     }
 
-    if(state.targetUser!=null && state.currentUser!=null && !state.isLoading) {
+    when(state) {
+        is UserProfileUiState.Error -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Oops! Something went wrong",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
 
-           Column(
-               modifier = Modifier
-                   .fillMaxSize()
-                   .padding(24.dp),
-               horizontalAlignment = Alignment.CenterHorizontally
-           ) {
+                Spacer(modifier = Modifier.height(8.dp))
 
-               Spacer(modifier = Modifier.height(40.dp))
+                Text(
+                    text = "Error: ${state.message}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
 
-               Row(modifier = Modifier.fillMaxWidth()) {
-                   IconButton(onClick = {
-                       onPopBackStack()
-                   }) {
-                       Icon(
-                           painter = painterResource(R.drawable.arrow_back),
-                           contentDescription = "Back",
-                           tint = MaterialTheme.colorScheme.onSurface
-                       )
-                   }
-                   Spacer(modifier = Modifier.width(70.dp))
-                   Box(contentAlignment = Alignment.BottomEnd) {
+                Spacer(modifier = Modifier.height(32.dp))
 
-                       AvatarCircle(
-                           letter = state.targetUser.core.displayName.take(1),
-                           color = PrimaryColor,
-                           size = 125
-                       )
+                Button(
+                    onClick = { viewModel.retry() },
+                    modifier = Modifier.fillMaxWidth(0.6f)
+                ) {
+                    Text(text = "Retry")
+                }
+            }
+        }
+        is UserProfileUiState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        is UserProfileUiState.Success -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
 
-                       if(state.userStatus?.state == "online") {
-                           Box(
-                               modifier = Modifier
-                                   .size(24.dp)
-                                   .clip(CircleShape)
-                                   .background(Color.White)
-                                   .padding(3.dp)
-                           ) {
-                               Box(
-                                   modifier = Modifier
-                                       .fillMaxSize()
-                                       .clip(CircleShape)
-                                       .background(Color(0xFF4CAF50))
-                               )
-                           }
-                       }
-                   }
-               }
+                Spacer(modifier = Modifier.height(40.dp))
 
-               Spacer(modifier = Modifier.height(16.dp))
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    IconButton(onClick = {
+                        onPopBackStack()
+                    }) {
+                        Icon(
+                            painter = painterResource(R.drawable.arrow_back),
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(70.dp))
+                    Box(contentAlignment = Alignment.BottomEnd) {
 
-               Row(verticalAlignment = Alignment.CenterVertically) {
-                   Text(
-                       text = state.targetUser.core.displayName,
-                       fontSize = 24.sp,
-                       fontWeight = FontWeight.Bold,
-                       color = MaterialTheme.colorScheme.onSurface
-                   )
-                   if(state.targetUser.core.verified) {
-                       Spacer(modifier = Modifier.width(6.dp))
-                       Icon(
-                           painter = painterResource(R.drawable.check_circle),
-                           contentDescription = "Verified",
-                           tint = Color.Blue,
-                           modifier = Modifier.size(20.dp)
-                       )
-                   }
-               }
+                        AvatarCircle(
+                            letter = state.targetUser.core.displayName.take(1),
+                            color = PrimaryColor,
+                            size = 125
+                        )
 
-               if(state.targetUser.core.username!=null) {
-                   Text(
-                       text = "@${state.targetUser.core.username}",
-                       fontSize = 16.sp,
-                       color = Color.Gray
-                   )
-               }
+                        if(state.userStatus?.state == "online") {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White)
+                                    .padding(3.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF4CAF50))
+                                )
+                            }
+                        }
+                    }
+                }
 
-               if(
-                   state.targetUser.core.customStatus != null ||
-                   state.userStatus?.geo != null ||
-                   uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyEmail, state.currentUser) ||
-                   (uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyPhoneNumber, state.currentUser) && state.targetUser.core.phoneNumber!=null) ||
-                   state.targetUser.core.bio.isNotBlank()
-               ) {
-                   Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                   Surface(
-                       modifier = Modifier.fillMaxWidth(),
-                       shape = RoundedCornerShape(24.dp),
-                       shadowElevation = 2.dp
-                   ) {
-                       Column(modifier = Modifier.padding(20.dp)) {
-                           if(state.targetUser.core.customStatus!=null) {
-                               ProfileInfoRow(
-                                   state.targetUser.core.customStatus,
-                                   R.drawable.check_circle
-                               )
-                           }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = state.targetUser.core.displayName,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if(state.targetUser.core.verified) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(
+                            painter = painterResource(R.drawable.check_circle),
+                            contentDescription = "Verified",
+                            tint = Color.Blue,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                if(state.targetUser.core.username!=null) {
+                    Text(
+                        text = "@${state.targetUser.core.username}",
+                        fontSize = 16.sp,
+                        color = Color.Gray
+                    )
+                }
+
+                if(
+                    state.targetUser.core.customStatus != null ||
+                    state.userStatus?.geo != null ||
+                    uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyEmail, state.currentUser) ||
+                    (uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyPhoneNumber, state.currentUser) && state.targetUser.core.phoneNumber!=null) ||
+                    state.targetUser.core.bio.isNotBlank()
+                ) {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(24.dp),
+                        shadowElevation = 2.dp
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            if(state.targetUser.core.customStatus!=null) {
+                                ProfileInfoRow(
+                                    state.targetUser.core.customStatus,
+                                    R.drawable.check_circle
+                                )
+                            }
 
 
-                           if(state.userStatus?.geo!=null) {
-                               ProfileInfoRow(
-                                   "${state.userStatus.geo.latitude}, ${state.userStatus.geo.longitude}",
-                                   R.drawable.location_geo
-                               )
-                           }
+                            if(state.userStatus?.geo!=null) {
+                                ProfileInfoRow(
+                                    "${state.userStatus.geo.latitude}, ${state.userStatus.geo.longitude}",
+                                    R.drawable.location_geo
+                                )
+                            }
 
 
-                           if(uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyEmail, state.currentUser)) {
-                               ProfileInfoRow(
-                                   state.targetUser.core.email,
-                                   R.drawable.mail
-                               )
-                           }
+                            if(uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyEmail, state.currentUser)) {
+                                ProfileInfoRow(
+                                    state.targetUser.core.email,
+                                    R.drawable.mail
+                                )
+                            }
 
-                           if(uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyPhoneNumber, state.currentUser) && state.targetUser.core.phoneNumber!=null) {
-                               ProfileInfoRow(
-                                   "+${state.targetUser.core.phoneNumber}",
-                                   R.drawable.local_phone
-                               )
-                           }
+                            if(uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyPhoneNumber, state.currentUser) && state.targetUser.core.phoneNumber!=null) {
+                                ProfileInfoRow(
+                                    "+${state.targetUser.core.phoneNumber}",
+                                    R.drawable.local_phone
+                                )
+                            }
 
-                           Text(
-                               text = state.targetUser.core.bio,
-                               fontSize = 17.sp,
-                               lineHeight = 20.sp
-                           )
-                       }
-                   }
-               }
+                            Text(
+                                text = state.targetUser.core.bio,
+                                fontSize = 17.sp,
+                                lineHeight = 20.sp
+                            )
+                        }
+                    }
+                }
 
-               Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.weight(1f))
 
-               Row(
-                   modifier = Modifier.fillMaxWidth(),
-                   horizontalArrangement = Arrangement.spacedBy(12.dp)
-               ) {
-                   Button(
-                       onClick = {
-                           onChatClick(state.targetUser.core.uid)
-                       },
-                       modifier = Modifier
-                           .weight(1f)
-                           .height(56.dp),
-                       shape = RoundedCornerShape(16.dp),
-                       colors = ButtonDefaults.buttonColors(
-                           containerColor = MaterialTheme.colorScheme.onSurface
-                       )
-                   ) {
-                       Icon(
-                           painter = painterResource(R.drawable.mail),
-                           contentDescription = null
-                       )
-                       Spacer(modifier = Modifier.width(8.dp))
-                       Text(
-                           text = stringResource(R.string.message),
-                           color = MaterialTheme.colorScheme.surface
-                       )
-                   }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            onChatClick(state.targetUser.core.uid)
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.mail),
+                            contentDescription = null
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.message),
+                            color = MaterialTheme.colorScheme.surface
+                        )
+                    }
 
-                   if(state.targetUser.core.uid != state.currentUser.core.uid) {
-                       FilledTonalButton(
-                           onClick = { viewModel.addFriend() },
-                           modifier = Modifier
-                               .weight(1f)
-                               .height(56.dp),
-                           shape = RoundedCornerShape(16.dp),
-                           colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFFE9ECEF))
-                       ) {
-                           Icon(
-                               imageVector = when {
-                                   state.targetUser.social.friends.contains(state.currentUser.core.uid) || state.currentUser.social.friends.contains(state.targetUser.core.uid) -> Icons.Default.Close
-                                   state.targetUser.social.pendingFriendshipRequests.contains(state.currentUser.core.uid) -> Icons.Default.Close
-                                   state.currentUser.social.pendingFriendshipRequests.contains(state.targetUser.core.uid) -> Icons.Default.Done
-                                   else -> Icons.Default.Add
-                               },
-                               contentDescription = null,
-                               tint = Color.Black
-                           )
-                           Spacer(modifier = Modifier.width(8.dp))
-                           Text(
-                               text = stringResource(
-                                   when {
-                                       state.targetUser.social.friends.contains(state.currentUser.core.uid) || state.currentUser.social.friends.contains(state.targetUser.core.uid) -> R.string.remove_friend
-                                       state.targetUser.social.pendingFriendshipRequests.contains(state.currentUser.core.uid) -> R.string.cancel_friend_request
-                                       state.currentUser.social.pendingFriendshipRequests.contains(state.targetUser.core.uid) -> R.string.accept_friend_request
-                                       else -> R.string.add_to_friends
-                                   }
-                               ),
-                               color = Color.Black
-                           )
-                       }
-                   }
-               }
-           }
-    } else {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
+                    if(state.targetUser.core.uid != state.currentUser.core.uid) {
+                        FilledTonalButton(
+                            onClick = { viewModel.addFriend() },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFFE9ECEF))
+                        ) {
+                            Icon(
+                                imageVector = when {
+                                    state.targetUser.social.friends.contains(state.currentUser.core.uid) || state.currentUser.social.friends.contains(state.targetUser.core.uid) -> Icons.Default.Close
+                                    state.targetUser.social.pendingFriendshipRequests.contains(state.currentUser.core.uid) -> Icons.Default.Close
+                                    state.currentUser.social.pendingFriendshipRequests.contains(state.targetUser.core.uid) -> Icons.Default.Done
+                                    else -> Icons.Default.Add
+                                },
+                                contentDescription = null,
+                                tint = Color.Black
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(
+                                    when {
+                                        state.targetUser.social.friends.contains(state.currentUser.core.uid) || state.currentUser.social.friends.contains(state.targetUser.core.uid) -> R.string.remove_friend
+                                        state.targetUser.social.pendingFriendshipRequests.contains(state.currentUser.core.uid) -> R.string.cancel_friend_request
+                                        state.currentUser.social.pendingFriendshipRequests.contains(state.targetUser.core.uid) -> R.string.accept_friend_request
+                                        else -> R.string.add_to_friends
+                                    }
+                                ),
+                                color = Color.Black
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

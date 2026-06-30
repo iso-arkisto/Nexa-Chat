@@ -6,11 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.yourname.chat.domain.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.WhileSubscribed
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -26,41 +27,63 @@ class UserProfileViewModel @Inject constructor(
     private val _uiEvent = Channel<UserProfileUiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
 
-    val uiState: StateFlow<UserProfileUiState> = combine(
-        repository.getUserData(userId),
-        repository.getCurrentUserData(),
-        repository.getUserStatus(userId)
-    ) { targetUser, currentUser, userStatus ->
-        UserProfileUiState(
-            isLoading = false,
-            targetUser = targetUser,
-            currentUser = currentUser,
-            userStatus = userStatus
+    private val retryTrigger = MutableSharedFlow<Unit>(replay = 1).apply {
+        tryEmit(Unit)
+    }
+
+    val uiState: StateFlow<UserProfileUiState> = retryTrigger
+        .flatMapLatest {
+            combine(
+                repository.getUserData(userId),
+                repository.getCurrentUserData(),
+                repository.getUserStatus(userId)
+            ) { target, current, status ->
+                if(target != null && current != null && status != null) {
+                    UserProfileUiState.Success(
+                        targetUser = target,
+                        currentUser = current,
+                        userStatus = status
+                    )
+                } else {
+                    UserProfileUiState.Loading
+                }
+            }
+                .catch { e ->
+                    emit(UserProfileUiState.Error(e.localizedMessage ?: "Unknown error"))
+                }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = UserProfileUiState.Loading
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = UserProfileUiState(isLoading = true)
-    )
+
+    fun retry() {
+       retryTrigger.tryEmit(Unit)
+    }
 
     fun addFriend() {
         viewModelScope.launch {
-            val state = uiState.value
-            val currentUser = state.currentUser
-            val targetUser = state.targetUser
+            val currentState = uiState.value
 
-            if(currentUser == null || targetUser == null) {
-                sendUiEvent(UserProfileUiEvent.ShowToast("User data not available"))
-                return@launch
-            }
+            if(currentState is UserProfileUiState.Success) {
 
-            if(currentUser.core.uid == targetUser.core.uid) {
-                sendUiEvent(UserProfileUiEvent.ShowToast("You can't be your own friend"))
-                return@launch
-            }
+                val currentUser = currentState.currentUser
+                val targetUser = currentState.targetUser
 
-            repository.addFriend(currentUser, targetUser).onFailure { exception ->
-                sendUiEvent(UserProfileUiEvent.ShowToast("Failed: ${exception.message}"))
+                if(currentUser == null || targetUser == null) {
+                    sendUiEvent(UserProfileUiEvent.ShowToast("User data not available"))
+                    return@launch
+                }
+
+                if(currentUser.core.uid == targetUser.core.uid) {
+                    sendUiEvent(UserProfileUiEvent.ShowToast("You can't be your own friend"))
+                    return@launch
+                }
+
+                repository.addFriend(currentUser, targetUser).onFailure { exception ->
+                    sendUiEvent(UserProfileUiEvent.ShowToast("Failed: ${exception.message}"))
+                }
             }
         }
     }
