@@ -31,6 +31,7 @@ import com.yourname.chat.presentation.viewmodel.UsersViewModel
 import com.yourname.chat.presentation.screen.chat_screen.components.AvatarCircle
 import com.yourname.chat.ui.theme.PrimaryColor
 import com.yourname.chat.R
+import com.yourname.chat.presentation.components.ErrorScreen
 
 @Composable
 fun UserProfileScreen(
@@ -56,38 +57,10 @@ fun UserProfileScreen(
 
     when(state) {
         is UserProfileUiState.Error -> {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Oops! Something went wrong",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Error: ${state.message.asString()}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Button(
-                    onClick = { viewModel.retry() },
-                    modifier = Modifier.fillMaxWidth(0.6f)
-                ) {
-                    Text(text = "Retry")
-                }
-            }
+            ErrorScreen(
+                message = state.message.asString(),
+                onRetry = { viewModel.retry() }
+            )
         }
         is UserProfileUiState.Loading -> {
             Box(
