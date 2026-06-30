@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.yourname.chat.domain.repository.UserRepository
+import com.yourname.chat.presentation.components.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -49,7 +50,7 @@ class UserProfileViewModel @Inject constructor(
                 }
             }
                 .catch { e ->
-                    emit(UserProfileUiState.Error(e.localizedMessage ?: "Unknown error"))
+                    emit(UserProfileUiState.Error(UiText.DynamicString(e.localizedMessage ?: "Unknown error")))
                 }
         }
         .stateIn(
