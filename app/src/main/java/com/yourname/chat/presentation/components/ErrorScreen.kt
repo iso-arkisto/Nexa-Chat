@@ -13,8 +13,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.yourname.chat.R
 
 @Composable
 fun ErrorScreen(
@@ -29,7 +31,7 @@ fun ErrorScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Oops! Something went wrong",
+            text = stringResource(R.string.oops_something_went_wrong),
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
@@ -38,7 +40,7 @@ fun ErrorScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Error: $message",
+            text = "${stringResource(R.string.error)}: $message",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -50,7 +52,7 @@ fun ErrorScreen(
             onClick = onRetry,
             modifier = Modifier.fillMaxWidth(0.6f)
         ) {
-            Text(text = "Retry")
+            Text(text = stringResource(R.string.retry))
         }
     }
 }

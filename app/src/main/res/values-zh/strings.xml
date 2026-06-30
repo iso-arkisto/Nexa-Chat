@@ -68,4 +68,7 @@
     <string name="accept_friend_request">接受好友请求</string>
     <string name="add_to_friends">加好友</string>
     <string name="typing">正在输入</string>
+    <string name="oops_something_went_wrong">哎呀！出错了</string>
+    <string name="retry">重试</string>
+    <string name="error">错误</string>
 </resources>

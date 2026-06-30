@@ -68,4 +68,7 @@
     <string name="accept_friend_request">Als Freund annehmen</string>
     <string name="add_to_friends">Zu Freunden hinzufügen</string>
     <string name="typing">Schreibt</string>
+    <string name="oops_something_went_wrong">Hoppla! Etwas ist schiefgelaufen</string>
+    <string name="retry">Wiederholen</string>
+    <string name="error">Fehler</string>
 </resources>
