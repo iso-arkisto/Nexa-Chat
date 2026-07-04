@@ -35,7 +35,6 @@ import com.yourname.chat.presentation.components.ErrorScreen
 
 @Composable
 fun UserProfileScreen(
-    uvm: UsersViewModel = hiltViewModel(),
     onPopBackStack: () -> Unit,
     onChatClick: (String) -> Unit,
     viewModel: UserProfileViewModel = hiltViewModel()
@@ -146,13 +145,7 @@ fun UserProfileScreen(
                     )
                 }
 
-                if(
-                    state.targetUser.core.customStatus != null ||
-                    state.userStatus?.geo != null ||
-                    uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyEmail, state.currentUser) ||
-                    (uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyPhoneNumber, state.currentUser) && state.targetUser.core.phoneNumber!=null) ||
-                    state.targetUser.core.bio.isNotBlank()
-                ) {
+                if(state.isProfileInfoVisible) {
                     Spacer(modifier = Modifier.height(24.dp))
 
                     Surface(
@@ -177,14 +170,14 @@ fun UserProfileScreen(
                             }
 
 
-                            if(uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyEmail, state.currentUser)) {
+                            if(state.canSeeEmail) {
                                 ProfileInfoRow(
                                     state.targetUser.core.email,
                                     R.drawable.mail
                                 )
                             }
 
-                            if(uvm.checkAccess(state.targetUser, state.targetUser.privacy.privacyPhoneNumber, state.currentUser) && state.targetUser.core.phoneNumber!=null) {
+                            if(state.canSeePhone) {
                                 ProfileInfoRow(
                                     "+${state.targetUser.core.phoneNumber}",
                                     R.drawable.local_phone

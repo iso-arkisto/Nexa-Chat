@@ -3,6 +3,7 @@ package com.yourname.chat.presentation.screen.userprofile_screen
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yourname.chat.domain.CheckUserAccessUseCase
 import com.yourname.chat.domain.repository.UserRepository
 import com.yourname.chat.presentation.components.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,7 +22,8 @@ import javax.inject.Inject
 @HiltViewModel
 class UserProfileViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val repository: UserRepository
+    private val repository: UserRepository,
+    private val checkAccessUseCase: CheckUserAccessUseCase
 ): ViewModel() {
     val userId: String = checkNotNull(savedStateHandle["userId"])
 
@@ -43,7 +45,8 @@ class UserProfileViewModel @Inject constructor(
                     UserProfileUiState.Success(
                         targetUser = target,
                         currentUser = current,
-                        userStatus = status
+                        userStatus = status,
+                        checkAccess = checkAccessUseCase::invoke
                     )
                 } else {
                     UserProfileUiState.Loading
