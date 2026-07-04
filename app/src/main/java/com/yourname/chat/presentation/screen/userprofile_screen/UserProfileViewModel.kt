@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -25,7 +26,7 @@ class UserProfileViewModel @Inject constructor(
     private val repository: UserRepository,
     private val checkAccessUseCase: CheckUserAccessUseCase
 ): ViewModel() {
-    val userId: String = checkNotNull(savedStateHandle["userId"])
+    val userId: String? = savedStateHandle["userId"]
 
     private val _uiEvent = Channel<UserProfileUiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
@@ -36,6 +37,13 @@ class UserProfileViewModel @Inject constructor(
 
     val uiState: StateFlow<UserProfileUiState> = retryTrigger
         .flatMapLatest {
+
+            if(userId.isNullOrBlank()) {
+                return@flatMapLatest flowOf(
+                    UserProfileUiState.Error(UiText.DynamicString("User ID is missing"))
+                )
+            }
+
             combine(
                 repository.getUserData(userId),
                 repository.getCurrentUserData(),
