@@ -1,8 +1,13 @@
 package com.yourname.chat.presentation.screen.userprofile_screen
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Done
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.yourname.chat.R
 import com.yourname.chat.domain.CheckUserAccessUseCase
 import com.yourname.chat.domain.repository.UserRepository
 import com.yourname.chat.presentation.components.UiText
@@ -50,11 +55,34 @@ class UserProfileViewModel @Inject constructor(
                 repository.getUserStatus(userId)
             ) { target, current, status ->
                 if(target != null && current != null && status != null) {
+
+                    val isOwnProfile = current.core.uid == target.core.uid
+
+                    val friendButtonState = if(isOwnProfile) {
+                        FriendButtonState(
+                            isVisible = false,
+                            icon = Icons.Default.Add,
+                            textResId = R.string.add_to_friends
+                        )
+                    } else {
+                        val isFriend = target.social.friends.contains(current.core.uid) || current.social.friends.contains(target.core.uid)
+                        val sentRequest = target.social.pendingFriendshipRequests.contains(current.core.uid)
+                        val receivedRequest = current.social.pendingFriendshipRequests.contains(target.core.uid)
+
+                        when {
+                            isFriend -> FriendButtonState(isVisible = true, icon = Icons.Default.Close, textResId = R.string.remove_friend)
+                            sentRequest -> FriendButtonState(isVisible = true, icon = Icons.Default.Close, textResId = R.string.cancel_friend_request)
+                            receivedRequest -> FriendButtonState(isVisible = true, icon = Icons.Default.Done, textResId = R.string.accept_friend_request)
+                            else -> FriendButtonState(isVisible = true, icon = Icons.Default.Add, textResId = R.string.add_to_friends)
+                        }
+                    }
+
                     UserProfileUiState.Success(
                         targetUser = target,
                         currentUser = current,
                         userStatus = status,
-                        checkAccess = checkAccessUseCase::invoke
+                        checkAccess = checkAccessUseCase::invoke,
+                        friendButtonState = friendButtonState
                     )
                 } else {
                     UserProfileUiState.Loading

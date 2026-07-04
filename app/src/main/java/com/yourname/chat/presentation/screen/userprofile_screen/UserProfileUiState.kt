@@ -14,6 +14,7 @@ sealed interface UserProfileUiState {
         val targetUser: User,
         val currentUser: User,
         val userStatus: UserStatus,
+        val friendButtonState: FriendButtonState,
         private val checkAccess: (User, User, String) -> Boolean
     ) : UserProfileUiState {
 

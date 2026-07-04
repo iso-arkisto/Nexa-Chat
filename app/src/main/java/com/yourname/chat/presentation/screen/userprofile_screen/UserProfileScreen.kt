@@ -1,16 +1,11 @@
 package com.yourname.chat.presentation.screen.userprofile_screen
 
-import android.widget.Space
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,12 +17,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.yourname.chat.presentation.viewmodel.UsersViewModel
 import com.yourname.chat.presentation.screen.chat_screen.components.AvatarCircle
 import com.yourname.chat.ui.theme.PrimaryColor
 import com.yourname.chat.R
@@ -222,7 +215,7 @@ fun UserProfileScreen(
                         )
                     }
 
-                    if(state.targetUser.core.uid != state.currentUser.core.uid) {
+                    if(state.friendButtonState.isVisible) {
                         FilledTonalButton(
                             onClick = { viewModel.addFriend() },
                             modifier = Modifier
@@ -232,25 +225,13 @@ fun UserProfileScreen(
                             colors = ButtonDefaults.filledTonalButtonColors(containerColor = Color(0xFFE9ECEF))
                         ) {
                             Icon(
-                                imageVector = when {
-                                    state.targetUser.social.friends.contains(state.currentUser.core.uid) || state.currentUser.social.friends.contains(state.targetUser.core.uid) -> Icons.Default.Close
-                                    state.targetUser.social.pendingFriendshipRequests.contains(state.currentUser.core.uid) -> Icons.Default.Close
-                                    state.currentUser.social.pendingFriendshipRequests.contains(state.targetUser.core.uid) -> Icons.Default.Done
-                                    else -> Icons.Default.Add
-                                },
+                                imageVector = state.friendButtonState.icon,
                                 contentDescription = null,
                                 tint = Color.Black
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = stringResource(
-                                    when {
-                                        state.targetUser.social.friends.contains(state.currentUser.core.uid) || state.currentUser.social.friends.contains(state.targetUser.core.uid) -> R.string.remove_friend
-                                        state.targetUser.social.pendingFriendshipRequests.contains(state.currentUser.core.uid) -> R.string.cancel_friend_request
-                                        state.currentUser.social.pendingFriendshipRequests.contains(state.targetUser.core.uid) -> R.string.accept_friend_request
-                                        else -> R.string.add_to_friends
-                                    }
-                                ),
+                                text = stringResource(state.friendButtonState.textResId),
                                 color = Color.Black
                             )
                         }
