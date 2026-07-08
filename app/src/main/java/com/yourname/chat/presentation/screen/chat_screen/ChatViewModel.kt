@@ -10,14 +10,13 @@ import com.yourname.chat.data.model.message.Message
 import com.yourname.chat.domain.repository.MessageRepository
 import com.yourname.chat.domain.repository.UserRepository
 import com.yourname.chat.presentation.components.UiText
-import com.yourname.chat.presentation.screen.userprofile_screen.UserProfileUiState
+import com.yourname.chat.utils.toShortTimeString
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -70,17 +69,35 @@ class ChatViewModel @Inject constructor(
                 userRepository.getUserStatus(chatId)
             ) { canSend, allMessages, target, current, status ->
                 if(allMessages != null && target != null && current != null && status != null) {
-                    val chatTitle = if(target.core.uid == current.core.uid) UiText.ResourceString(R.string.storage) else UiText.DynamicString(target.core.displayName)
-                    val userAvatar = if(target.core.uid == current.core.uid) "🔒" else target.core.displayName.take(1)
+                    val isOwnProfile = target.core.uid == current.core.uid
+
+                    val chatTitle = if(isOwnProfile) UiText.ResourceString(R.string.storage) else UiText.DynamicString(target.core.displayName)
+                    val userAvatar = if(isOwnProfile) "🔒" else target.core.displayName.take(1)
+
+                    val statusText = when {
+                        isOwnProfile -> { UiText.ResourceString(R.string.self_messages) }
+                        status.typing == chatId -> { UiText.ResourceString(R.string.typing) }
+                        status.state == "online" -> { UiText.ResourceString(R.string.online) }
+                        status.lastSeen != null -> {
+                            val formattedTime = status.lastSeen.toShortTimeString()
+                            UiText.ResourceString(R.string.last_seen, listOf(formattedTime))
+                        }
+                        else -> { UiText.ResourceString(R.string.offline) }
+                    }
 
                     ChatUiState.Success(
-                        chatTitle = chatTitle,
-                        userAvatar = userAvatar,
-                        canSend = canSend,
                         allMessages = allMessages,
+                        chatHeader = ChatHeaderState(
+                            title = chatTitle,
+                            avatar = userAvatar,
+                            status = statusText
+                        ),
+                        messageInput = MessageInputState(
+                            canSend = canSend
+                        ),
+                        dialogs = ChatDialogsState.None,
                         targetUser = target,
-                        currentUser = current,
-                        userStatus = status
+                        currentUser = current
                     )
                 } else {
                     ChatUiState.Loading

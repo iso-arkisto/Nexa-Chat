@@ -199,7 +199,7 @@ fun ChatScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = state.userAvatar,
+                                    text = state.chatHeader.avatar,
                                     color = Color.White,
                                     fontSize = 20.sp
                                 )
@@ -208,26 +208,14 @@ fun ChatScreen(
 
                             Column {
                                 Text(
-                                    text = state.chatTitle.asString(),
+                                    text = state.chatHeader.title.asString(),
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 16.sp
                                     )
                                 )
                                 Text(
-                                    text = if(state.targetUser.core.uid == state.currentUser.core.uid) {
-                                        stringResource(R.string.self_messages)
-                                    } else {
-                                        if(state.userStatus.typing == viewModel.chatId) {
-                                            "${stringResource(R.string.typing).lowercase()}..."
-                                        } else if(state.userStatus.state == "online") {
-                                            stringResource(R.string.online)
-                                        } else if(state.userStatus.lastSeen != null) {
-                                            context.getString(R.string.last_seen, state.userStatus.lastSeen.toShortTimeString())
-                                        } else {
-                                            stringResource(R.string.offline)
-                                        }
-                                    },
+                                    text = state.chatHeader.status.asString(),
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         color = Color.Gray,
                                         fontSize = 12.sp
@@ -359,7 +347,7 @@ fun ChatScreen(
             }
 
             ChatInputBar(onMessageSend = { text ->
-                if (state.canSend) {
+                if (state.messageInput.canSend) {
                     if(!state.currentUser.moderation.chatAccess.banned && uvm.checkAccess(state.currentUser, state.targetUser.privacy.whoCanChat, state.targetUser)) {
                         viewModel.sendMessage(text)
                     }

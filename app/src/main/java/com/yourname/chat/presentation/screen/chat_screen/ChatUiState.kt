@@ -11,12 +11,13 @@ sealed interface ChatUiState {
     data class Error(val message: UiText) : ChatUiState
 
     data class Success(
-        val userAvatar: String,
-        val chatTitle: UiText,
-        val canSend: Boolean,
+
+        val chatHeader: ChatHeaderState,
+        val messageInput: MessageInputState,
+        val dialogs: ChatDialogsState,
+
         val allMessages: List<Message>,
         val targetUser: User,
         val currentUser: User,
-        val userStatus: UserStatus
     ) : ChatUiState
 }
