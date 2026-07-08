@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,6 +57,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.yourname.chat.presentation.components.ErrorScreen
 import com.yourname.chat.presentation.viewmodel.UsersViewModel
 import com.yourname.chat.presentation.screen.chat_screen.components.ChatInputBar
 import com.yourname.chat.presentation.screen.chat_screen.components.ChatMessageItem
@@ -76,21 +78,13 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    val userStatusState by viewModel.otherUserStatus.collectAsStateWithLifecycle()
-    val userStatus = userStatusState
-
-    val currentUserState by viewModel.currentUserState.collectAsStateWithLifecycle()
-    val currentUser = currentUserState
-
-    val otherUserState by viewModel.otherUserState.collectAsStateWithLifecycle()
-    val otherUser = otherUserState
+    val uiState = viewModel.uiState.collectAsStateWithLifecycle()
+    val state = uiState.value
 
     var selectedMessages by remember { mutableStateOf<List<Message>>(emptyList()) }
 
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
-
-    val messages by viewModel.allMessages.collectAsStateWithLifecycle()
 
     val text_copied = stringResource(R.string.text_copied)
     val wait_seconds = stringResource(R.string.wait_seconds)
@@ -105,53 +99,69 @@ fun ChatScreen(
         }
     }
 
-    LaunchedEffect(messages.size) {
-        if(messages.isNotEmpty()) {
-            listState.animateScrollToItem(listState.layoutInfo.totalItemsCount)
-        }
-    }
-
-    if (showDeleteDialog) {
-        ConfirmationDialog(
-            title = stringResource(R.string.delete_message),
-            desc = stringResource(R.string.action_undone),
-            agreeLabel = stringResource(R.string.delete),
-            onCancel = {
-                showDeleteDialog = false
-            },
-            onAgree = {
-                showDeleteDialog = false
-                viewModel.deleteMessages(messages = selectedMessages)
-                selectedMessages = emptyList()
-            },
-            isDangerous = true
-        )
-    }
-
-    if(showEditDialog) {
-        var decryptedText by remember { mutableStateOf<String?>(messages.find { it.id == selectedMessages.firstOrNull()?.id }?.text ?: "") }
-
-        if(decryptedText!=null) {
-            ConfirmationDialog(
-                title = stringResource(R.string.edit_message),
-                agreeLabel = stringResource(R.string.edit),
-                textFieldValue = decryptedText ?: "",
-                onCancel = { showEditDialog = false },
-                onAgreeWithText = { text ->
-                    showEditDialog = false
-
-                    if(selectedMessages.size==1) {
-                        viewModel.editMessage(selectedMessages.firstOrNull()?.id ?: "", text)
-                        selectedMessages = emptyList()
-                    }
-                }
+    when(state) {
+        is ChatUiState.Error -> {
+            ErrorScreen(
+                message = state.message.asString(),
+                onRetry = { viewModel.retry() }
             )
         }
 
+        is ChatUiState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
 
-    }
+        is ChatUiState.Success -> {
 
-        if(otherUser!=null && currentUser!=null) {
+            LaunchedEffect(state.allMessages.size) {
+                if(state.allMessages.isNotEmpty()) {
+                    listState.animateScrollToItem(listState.layoutInfo.totalItemsCount)
+                }
+            }
+
+            if (showDeleteDialog) {
+                ConfirmationDialog(
+                    title = stringResource(R.string.delete_message),
+                    desc = stringResource(R.string.action_undone),
+                    agreeLabel = stringResource(R.string.delete),
+                    onCancel = {
+                        showDeleteDialog = false
+                    },
+                    onAgree = {
+                        showDeleteDialog = false
+                        viewModel.deleteMessages(messages = selectedMessages)
+                        selectedMessages = emptyList()
+                    },
+                    isDangerous = true
+                )
+            }
+
+            if(showEditDialog) {
+                var decryptedText by remember { mutableStateOf<String?>(state.allMessages.find { it.id == selectedMessages.firstOrNull()?.id }?.text ?: "") }
+
+                if(decryptedText!=null) {
+                    ConfirmationDialog(
+                        title = stringResource(R.string.edit_message),
+                        agreeLabel = stringResource(R.string.edit),
+                        textFieldValue = decryptedText ?: "",
+                        onCancel = { showEditDialog = false },
+                        onAgreeWithText = { text ->
+                            showEditDialog = false
+
+                            if(selectedMessages.size==1) {
+                                viewModel.editMessage(selectedMessages.firstOrNull()?.id ?: "", text)
+                                selectedMessages = emptyList()
+                            }
+                        }
+                    )
+                }
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -183,13 +193,13 @@ fun ChatScreen(
                                     .size(40.dp)
                                     .clip(CircleShape)
                                     .clickable {
-                                        onProfileClick(otherUser.core.uid)
+                                        onProfileClick(state.targetUser.core.uid)
                                     }
                                     .background(PrimaryColor),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = if(otherUser.core.uid != currentUser.core.uid) otherUser.core.displayName.take(1).uppercase() else "🔒",
+                                    text = state.userAvatar,
                                     color = Color.White,
                                     fontSize = 20.sp
                                 )
@@ -198,26 +208,22 @@ fun ChatScreen(
 
                             Column {
                                 Text(
-                                    text = if(otherUser.core.uid == currentUser.core.uid) {
-                                        stringResource(R.string.storage)
-                                    } else {
-                                        otherUser.core.displayName
-                                    },
+                                    text = state.chatTitle.asString(),
                                     style = MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.SemiBold,
                                         fontSize = 16.sp
                                     )
                                 )
                                 Text(
-                                    text = if(otherUser.core.uid == currentUser.core.uid) {
+                                    text = if(state.targetUser.core.uid == state.currentUser.core.uid) {
                                         stringResource(R.string.self_messages)
                                     } else {
-                                        if(userStatus?.typing == viewModel.chatId) {
+                                        if(state.userStatus.typing == viewModel.chatId) {
                                             "${stringResource(R.string.typing).lowercase()}..."
-                                        } else if(userStatus?.state == "online") {
+                                        } else if(state.userStatus.state == "online") {
                                             stringResource(R.string.online)
-                                        } else if(userStatus?.lastSeen != null) {
-                                            context.getString(R.string.last_seen, userStatus.lastSeen.toShortTimeString())
+                                        } else if(state.userStatus.lastSeen != null) {
+                                            context.getString(R.string.last_seen, state.userStatus.lastSeen.toShortTimeString())
                                         } else {
                                             stringResource(R.string.offline)
                                         }
@@ -241,7 +247,7 @@ fun ChatScreen(
                                         onClick = {
 
                                             scope.launch {
-                                                val decryptedText = messages.find { it.id == selectedMessages.firstOrNull()?.id }?.text ?: ""
+                                                val decryptedText = state.allMessages.find { it.id == selectedMessages.firstOrNull()?.id }?.text ?: ""
                                                 clipboard.setClipEntry(
                                                     ClipEntry(ClipData.newPlainText("label",decryptedText))
                                                 )
@@ -264,7 +270,7 @@ fun ChatScreen(
                                         )
                                     }
                                     Spacer(modifier = Modifier.width((-100).dp))
-                                    if(!currentUser.moderation.chatAccess.banned && selectedMessages[0].senderId == currentUser.core.uid) {
+                                    if(!state.currentUser.moderation.chatAccess.banned && selectedMessages[0].senderId == state.currentUser.core.uid) {
                                         Button(
                                             onClick = {
                                                 showEditDialog = true
@@ -290,7 +296,7 @@ fun ChatScreen(
 
 
                                 }
-                                if(selectedMessages.all { it.senderId == currentUser.core.uid || (System.currentTimeMillis() - (it.timestamp?.toDate()?.time ?: 61_000)) < 600_000 }) {
+                                if(selectedMessages.all { it.senderId == state.currentUser.core.uid || (System.currentTimeMillis() - (it.timestamp?.toDate()?.time ?: 61_000)) < 600_000 }) {
                                     Button(
                                         onClick = {
                                             showDeleteDialog = true
@@ -327,10 +333,10 @@ fun ChatScreen(
                     .fillMaxHeight(.9f)
                     .padding(top = 80.dp)
             ) {
-                items(messages) {
+                items(state.allMessages) {
                         msg ->
 
-                    val isSentByCurrentUser = currentUser.core.uid == msg.senderId
+                    val isSentByCurrentUser = state.currentUser.core.uid == msg.senderId
 
                     ChatMessageItem(
                         item = msg,
@@ -353,8 +359,8 @@ fun ChatScreen(
             }
 
             ChatInputBar(onMessageSend = { text ->
-                if (viewModel.canSend.value) {
-                    if(!currentUser.moderation.chatAccess.banned && uvm.checkAccess(currentUser, otherUser.privacy.whoCanChat, otherUser)) {
+                if (state.canSend) {
+                    if(!state.currentUser.moderation.chatAccess.banned && uvm.checkAccess(state.currentUser, state.targetUser.privacy.whoCanChat, state.targetUser)) {
                         viewModel.sendMessage(text)
                     }
                 } else {
@@ -364,10 +370,10 @@ fun ChatScreen(
                 viewModel.userTyping(viewModel.chatId)
             },
                 banReason =
-                    if(currentUser.moderation.chatAccess.banned) {
+                    if(state.currentUser.moderation.chatAccess.banned) {
                         stringResource(R.string.your_chat_restricted)
                     } else {
-                        if(!uvm.checkAccess(currentUser, otherUser.privacy.whoCanChat, otherUser) && currentUser.core.uid != otherUser.core.uid) {
+                        if(!uvm.checkAccess(state.currentUser, state.targetUser.privacy.whoCanChat, state.targetUser) && state.currentUser.core.uid != state.targetUser.core.uid) {
                             stringResource(R.string.who_can_message)
                         } else {
                             null
@@ -375,4 +381,5 @@ fun ChatScreen(
                     }
             )
         }
+    }
 }
