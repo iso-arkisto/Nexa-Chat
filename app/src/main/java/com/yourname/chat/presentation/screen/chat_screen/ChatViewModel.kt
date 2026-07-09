@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.yourname.chat.R
 import com.yourname.chat.data.local.MessageEntity
 import com.yourname.chat.data.model.message.Message
+import com.yourname.chat.data.model.user.User
+import com.yourname.chat.data.model.user.UserStatus
 import com.yourname.chat.domain.repository.MessageRepository
 import com.yourname.chat.domain.repository.UserRepository
 import com.yourname.chat.presentation.components.UiText
@@ -44,6 +46,7 @@ class ChatViewModel @Inject constructor(
     }
 
     private val _canSend = MutableStateFlow(true)
+    private val _currentDialog = MutableStateFlow<ChatDialogsState>(ChatDialogsState.None)
 
     val uiState: StateFlow<ChatUiState> = retryTrigger
         .flatMapLatest {
@@ -61,43 +64,61 @@ class ChatViewModel @Inject constructor(
                     }
                 }
 
-            combine(
-                _canSend,
+            val domainDataFlow = combine(
                 decryptedMessagesFlow,
                 userRepository.getUserData(chatId),
                 userRepository.getCurrentUserData(),
                 userRepository.getUserStatus(chatId)
-            ) { canSend, allMessages, target, current, status ->
+            ) { allMessages, target, current, status ->
                 if(allMessages != null && target != null && current != null && status != null) {
-                    val isOwnProfile = target.core.uid == current.core.uid
+                    DomainChatData(allMessages, target, current, status)
+                } else {
+                    null
+                }
+            }
 
-                    val chatTitle = if(isOwnProfile) UiText.ResourceString(R.string.storage) else UiText.DynamicString(target.core.displayName)
-                    val userAvatar = if(isOwnProfile) "🔒" else target.core.displayName.take(1)
+            val localUiFlow = combine(
+                _canSend,
+                _currentDialog
+            ) { canSend, currentDialog ->
+                LocalUiData(canSend, currentDialog)
+            }
+
+            combine(
+                domainDataFlow,
+                localUiFlow
+            ) { domainData, localUi ->
+
+                if(domainData != null) {
+                    val isOwnProfile = domainData.target.core.uid == domainData.current.core.uid
+
+                    val chatTitle = if(isOwnProfile) UiText.ResourceString(R.string.storage) else UiText.DynamicString(domainData.target.core.displayName)
+                    val userAvatar = if(isOwnProfile) "🔒" else domainData.target.core.displayName.take(1)
 
                     val statusText = when {
                         isOwnProfile -> { UiText.ResourceString(R.string.self_messages) }
-                        status.typing == chatId -> { UiText.ResourceString(R.string.typing) }
-                        status.state == "online" -> { UiText.ResourceString(R.string.online) }
-                        status.lastSeen != null -> {
-                            val formattedTime = status.lastSeen.toShortTimeString()
+                        domainData.status.typing == chatId -> { UiText.ResourceString(R.string.typing) }
+                        domainData.status.state == "online" -> { UiText.ResourceString(R.string.online) }
+                        domainData.status.lastSeen != null -> {
+                            val formattedTime = domainData.status.lastSeen.toShortTimeString()
                             UiText.ResourceString(R.string.last_seen, listOf(formattedTime))
                         }
                         else -> { UiText.ResourceString(R.string.offline) }
                     }
 
                     ChatUiState.Success(
-                        allMessages = allMessages,
+                        allMessages = domainData.allMessages,
                         chatHeader = ChatHeaderState(
                             title = chatTitle,
                             avatar = userAvatar,
                             status = statusText
                         ),
                         messageInput = MessageInputState(
-                            canSend = canSend
+                            canSend = localUi.canSend
                         ),
-                        dialogs = ChatDialogsState.None,
-                        targetUser = target,
-                        currentUser = current
+                        dialogs = localUi.currentDialog,
+                        targetUser = domainData.target,
+                        currentUser = domainData.current
                     )
                 } else {
                     ChatUiState.Loading
@@ -115,6 +136,10 @@ class ChatViewModel @Inject constructor(
 
     fun retry() {
         retryTrigger.tryEmit(Unit)
+    }
+
+    fun onDismissDialog() {
+        uiState
     }
 
      fun sendMessage(text: String) {
@@ -191,4 +216,17 @@ class ChatViewModel @Inject constructor(
                 ""
             }
     }
+
+    private data class DomainChatData(
+        val allMessages: List<Message>,
+        val target: User,
+        val current: User,
+        val status: UserStatus
+    )
+
+    private data class LocalUiData(
+        val canSend: Boolean,
+        val currentDialog: ChatDialogsState
+    )
+
 }
