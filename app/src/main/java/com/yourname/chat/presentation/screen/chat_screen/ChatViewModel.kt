@@ -139,7 +139,39 @@ class ChatViewModel @Inject constructor(
     }
 
     fun onDismissDialog() {
-        uiState
+        _currentDialog.value = ChatDialogsState.None
+    }
+
+    fun onConfirmDeleteMessage() {
+        val currentDialog = _currentDialog.value
+
+        if(currentDialog is ChatDialogsState.DeleteMessage) {
+            deleteMessages(currentDialog.messages)
+        }
+
+        _currentDialog.value = ChatDialogsState.None
+    }
+
+    fun onConfirmEditMessage(newText: String) {
+        val currentDialog = _currentDialog.value
+
+        if(currentDialog is ChatDialogsState.EditMessage) {
+            editMessage(currentDialog.messageId, newText)
+        }
+
+        _currentDialog.value = ChatDialogsState.None
+    }
+
+    fun onDeleteMessageDialogOpen(messages: List<Message>) {
+        if(messages.isNotEmpty()) {
+            _currentDialog.value = ChatDialogsState.DeleteMessage(messages)
+        }
+    }
+
+    fun onEditMessageDialogOpen(message: Message?) {
+        message?.let {
+            _currentDialog.value = ChatDialogsState.EditMessage(it.id)
+        }
     }
 
      fun sendMessage(text: String) {

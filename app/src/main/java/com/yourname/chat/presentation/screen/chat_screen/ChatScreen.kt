@@ -83,9 +83,6 @@ fun ChatScreen(
 
     var selectedMessages by remember { mutableStateOf<List<Message>>(emptyList()) }
 
-    var showDeleteDialog by remember { mutableStateOf(false) }
-    var showEditDialog by remember { mutableStateOf(false) }
-
     val text_copied = stringResource(R.string.text_copied)
     val wait_seconds = stringResource(R.string.wait_seconds)
 
@@ -124,24 +121,21 @@ fun ChatScreen(
                 }
             }
 
-            if (showDeleteDialog) {
+            if (state.dialogs is ChatDialogsState.DeleteMessage) {
                 ConfirmationDialog(
                     title = stringResource(R.string.delete_message),
                     desc = stringResource(R.string.action_undone),
                     agreeLabel = stringResource(R.string.delete),
-                    onCancel = {
-                        showDeleteDialog = false
-                    },
+                    onCancel = { viewModel.onDismissDialog() },
                     onAgree = {
-                        showDeleteDialog = false
-                        viewModel.deleteMessages(messages = selectedMessages)
+                        viewModel.onConfirmDeleteMessage()
                         selectedMessages = emptyList()
                     },
                     isDangerous = true
                 )
             }
 
-            if(showEditDialog) {
+            if(state.dialogs is ChatDialogsState.EditMessage) {
                 var decryptedText by remember { mutableStateOf<String?>(state.allMessages.find { it.id == selectedMessages.firstOrNull()?.id }?.text ?: "") }
 
                 if(decryptedText!=null) {
@@ -149,14 +143,10 @@ fun ChatScreen(
                         title = stringResource(R.string.edit_message),
                         agreeLabel = stringResource(R.string.edit),
                         textFieldValue = decryptedText ?: "",
-                        onCancel = { showEditDialog = false },
+                        onCancel = { viewModel.onDismissDialog() },
                         onAgreeWithText = { text ->
-                            showEditDialog = false
-
-                            if(selectedMessages.size==1) {
-                                viewModel.editMessage(selectedMessages.firstOrNull()?.id ?: "", text)
-                                selectedMessages = emptyList()
-                            }
+                            viewModel.onConfirmEditMessage(text)
+                            selectedMessages = emptyList()
                         }
                     )
                 }
@@ -260,9 +250,7 @@ fun ChatScreen(
                                     Spacer(modifier = Modifier.width((-100).dp))
                                     if(!state.currentUser.moderation.chatAccess.banned && selectedMessages[0].senderId == state.currentUser.core.uid) {
                                         Button(
-                                            onClick = {
-                                                showEditDialog = true
-                                            },
+                                            onClick = { viewModel.onEditMessageDialogOpen(selectedMessages.firstOrNull()) },
                                             modifier = Modifier
                                                 .clip(CircleShape),
                                             colors = ButtonDefaults.buttonColors(
@@ -286,9 +274,7 @@ fun ChatScreen(
                                 }
                                 if(selectedMessages.all { it.senderId == state.currentUser.core.uid || (System.currentTimeMillis() - (it.timestamp?.toDate()?.time ?: 61_000)) < 600_000 }) {
                                     Button(
-                                        onClick = {
-                                            showDeleteDialog = true
-                                        },
+                                        onClick = { viewModel.onDeleteMessageDialogOpen(selectedMessages) },
                                         modifier = Modifier
                                             .clip(CircleShape),
                                         colors = ButtonDefaults.buttonColors(
