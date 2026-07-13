@@ -191,6 +191,16 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    fun copyMessageText() {
+        val message = _selectedMessages.value.firstOrNull()
+
+        message?.let {
+            sendUiEvent(ChatUiEvent.CopyToClipboard(message.text ?: ""))
+            sendUiEvent(ChatUiEvent.ShowToast("Message copied"))
+            clearSelectedMessages()
+        }
+    }
+
     fun toggleMessageSelection(message: Message) {
         val currentState = _selectedMessages.value
 

@@ -90,6 +90,11 @@ fun ChatScreen(
                 is ChatUiEvent.ShowToast -> {
                     Toast.makeText(context, event.text, Toast.LENGTH_SHORT).show()
                 }
+                is ChatUiEvent.CopyToClipboard -> {
+                    clipboard.setClipEntry(
+                        ClipEntry(ClipData.newPlainText("label", event.text))
+                    )
+                }
             }
         }
     }
@@ -218,17 +223,7 @@ fun ChatScreen(
                             ) {
                                 if(state.selectedMessages.size == 1) {
                                     Button(
-                                        onClick = {
-
-                                            scope.launch {
-                                                val decryptedText = state.allMessages.find { it.id == state.selectedMessages.firstOrNull()?.id }?.text ?: ""
-                                                clipboard.setClipEntry(
-                                                    ClipEntry(ClipData.newPlainText("label",decryptedText))
-                                                )
-                                                viewModel.clearSelectedMessages()
-                                                Toast.makeText(context, text_copied, Toast.LENGTH_SHORT).show()
-                                            }
-                                        },
+                                        onClick = { viewModel.copyMessageText() },
                                         modifier = Modifier
                                             .clip(CircleShape),
                                         colors = ButtonDefaults.buttonColors(
