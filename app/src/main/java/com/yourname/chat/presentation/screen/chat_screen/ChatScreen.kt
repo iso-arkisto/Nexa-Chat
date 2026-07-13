@@ -81,8 +81,6 @@ fun ChatScreen(
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     val state = uiState.value
 
-    var selectedMessages by remember { mutableStateOf<List<Message>>(emptyList()) }
-
     val text_copied = stringResource(R.string.text_copied)
     val wait_seconds = stringResource(R.string.wait_seconds)
 
@@ -129,14 +127,13 @@ fun ChatScreen(
                     onCancel = { viewModel.onDismissDialog() },
                     onAgree = {
                         viewModel.onConfirmDeleteMessage()
-                        selectedMessages = emptyList()
                     },
                     isDangerous = true
                 )
             }
 
             if(state.dialogs is ChatDialogsState.EditMessage) {
-                var decryptedText by remember { mutableStateOf<String?>(state.allMessages.find { it.id == selectedMessages.firstOrNull()?.id }?.text ?: "") }
+                var decryptedText by remember { mutableStateOf<String?>(state.allMessages.find { it.id == state.selectedMessages.firstOrNull()?.id }?.text ?: "") }
 
                 if(decryptedText!=null) {
                     ConfirmationDialog(
@@ -146,7 +143,6 @@ fun ChatScreen(
                         onCancel = { viewModel.onDismissDialog() },
                         onAgreeWithText = { text ->
                             viewModel.onConfirmEditMessage(text)
-                            selectedMessages = emptyList()
                         }
                     )
                 }
@@ -215,21 +211,21 @@ fun ChatScreen(
                         }
                     },
                     actions = {
-                        if(selectedMessages.isNotEmpty()) {
+                        if(state.selectedMessages.isNotEmpty()) {
                             Row(
                                 horizontalArrangement = Arrangement.End,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                if(selectedMessages.size == 1) {
+                                if(state.selectedMessages.size == 1) {
                                     Button(
                                         onClick = {
 
                                             scope.launch {
-                                                val decryptedText = state.allMessages.find { it.id == selectedMessages.firstOrNull()?.id }?.text ?: ""
+                                                val decryptedText = state.allMessages.find { it.id == state.selectedMessages.firstOrNull()?.id }?.text ?: ""
                                                 clipboard.setClipEntry(
                                                     ClipEntry(ClipData.newPlainText("label",decryptedText))
                                                 )
-                                                selectedMessages = emptyList()
+                                                viewModel.clearSelectedMessages()
                                                 Toast.makeText(context, text_copied, Toast.LENGTH_SHORT).show()
                                             }
                                         },
@@ -248,9 +244,9 @@ fun ChatScreen(
                                         )
                                     }
                                     Spacer(modifier = Modifier.width((-100).dp))
-                                    if(!state.currentUser.moderation.chatAccess.banned && selectedMessages[0].senderId == state.currentUser.core.uid) {
+                                    if(!state.currentUser.moderation.chatAccess.banned && state.selectedMessages[0].senderId == state.currentUser.core.uid) {
                                         Button(
-                                            onClick = { viewModel.onEditMessageDialogOpen(selectedMessages.firstOrNull()) },
+                                            onClick = { viewModel.onEditMessageDialogOpen() },
                                             modifier = Modifier
                                                 .clip(CircleShape),
                                             colors = ButtonDefaults.buttonColors(
@@ -272,9 +268,9 @@ fun ChatScreen(
 
 
                                 }
-                                if(selectedMessages.all { it.senderId == state.currentUser.core.uid || (System.currentTimeMillis() - (it.timestamp?.toDate()?.time ?: 61_000)) < 600_000 }) {
+                                if(state.selectedMessages.all { it.senderId == state.currentUser.core.uid || (System.currentTimeMillis() - (it.timestamp?.toDate()?.time ?: 61_000)) < 600_000 }) {
                                     Button(
-                                        onClick = { viewModel.onDeleteMessageDialogOpen(selectedMessages) },
+                                        onClick = { viewModel.onDeleteMessageDialogOpen() },
                                         modifier = Modifier
                                             .clip(CircleShape),
                                         colors = ButtonDefaults.buttonColors(
@@ -315,19 +311,13 @@ fun ChatScreen(
                     ChatMessageItem(
                         item = msg,
                         isMine = isSentByCurrentUser,
-                        onContextMenu = {
-                            if(selectedMessages.isEmpty()) {
-                                selectedMessages += msg
+                        onContextMenu = { viewModel.toggleMessageSelection(msg) },
+                        onClick = {
+                            if(state.selectedMessages.isNotEmpty()) {
+                                viewModel.toggleMessageSelection(msg)
                             }
                         },
-                        onClick = {if(selectedMessages.isNotEmpty()) {
-                            if(selectedMessages.contains(msg)) {
-                                selectedMessages -= msg
-                            } else {
-                                selectedMessages += msg
-                            }
-                        } },
-                        isSelected = selectedMessages.contains(msg),
+                        isSelected = state.selectedMessages.contains(msg),
                     )
                 }
             }

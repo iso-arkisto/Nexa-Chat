@@ -17,6 +17,7 @@ sealed interface ChatUiState {
         val dialogs: ChatDialogsState,
 
         val allMessages: List<Message>,
+        val selectedMessages: List<Message> = emptyList(),
         val targetUser: User,
         val currentUser: User,
     ) : ChatUiState

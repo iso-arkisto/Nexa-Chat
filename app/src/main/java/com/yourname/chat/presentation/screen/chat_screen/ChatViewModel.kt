@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.collections.map
@@ -47,6 +48,8 @@ class ChatViewModel @Inject constructor(
 
     private val _canSend = MutableStateFlow(true)
     private val _currentDialog = MutableStateFlow<ChatDialogsState>(ChatDialogsState.None)
+    private val _selectedMessages = MutableStateFlow<List<Message>>(emptyList())
+
 
     val uiState: StateFlow<ChatUiState> = retryTrigger
         .flatMapLatest {
@@ -79,9 +82,14 @@ class ChatViewModel @Inject constructor(
 
             val localUiFlow = combine(
                 _canSend,
-                _currentDialog
-            ) { canSend, currentDialog ->
-                LocalUiData(canSend, currentDialog)
+                _currentDialog,
+                _selectedMessages
+            ) { canSend, currentDialog, selectedMessages ->
+                LocalUiData(
+                    canSend = canSend,
+                    currentDialog = currentDialog,
+                    selectedMessages = selectedMessages
+                )
             }
 
             combine(
@@ -118,7 +126,8 @@ class ChatViewModel @Inject constructor(
                         ),
                         dialogs = localUi.currentDialog,
                         targetUser = domainData.target,
-                        currentUser = domainData.current
+                        currentUser = domainData.current,
+                        selectedMessages = localUi.selectedMessages
                     )
                 } else {
                     ChatUiState.Loading
@@ -150,6 +159,7 @@ class ChatViewModel @Inject constructor(
         }
 
         _currentDialog.value = ChatDialogsState.None
+        clearSelectedMessages()
     }
 
     fun onConfirmEditMessage(newText: String) {
@@ -160,18 +170,41 @@ class ChatViewModel @Inject constructor(
         }
 
         _currentDialog.value = ChatDialogsState.None
+        clearSelectedMessages()
     }
 
-    fun onDeleteMessageDialogOpen(messages: List<Message>) {
-        if(messages.isNotEmpty()) {
-            _currentDialog.value = ChatDialogsState.DeleteMessage(messages)
+    fun onDeleteMessageDialogOpen() {
+
+        val currentState = _selectedMessages.value
+
+        if(currentState.isNotEmpty()) {
+            _currentDialog.value = ChatDialogsState.DeleteMessage(currentState)
         }
     }
 
-    fun onEditMessageDialogOpen(message: Message?) {
+    fun onEditMessageDialogOpen() {
+
+        val message = _selectedMessages.value.firstOrNull()
+
         message?.let {
             _currentDialog.value = ChatDialogsState.EditMessage(it.id)
         }
+    }
+
+    fun toggleMessageSelection(message: Message) {
+        val currentState = _selectedMessages.value
+
+        val updateSelected = if(currentState.contains(message)) {
+            currentState - message
+        } else {
+            currentState + message
+        }
+
+        _selectedMessages.value = updateSelected
+    }
+
+    fun clearSelectedMessages() {
+        _selectedMessages.value = emptyList()
     }
 
      fun sendMessage(text: String) {
@@ -258,7 +291,8 @@ class ChatViewModel @Inject constructor(
 
     private data class LocalUiData(
         val canSend: Boolean,
-        val currentDialog: ChatDialogsState
+        val currentDialog: ChatDialogsState,
+        val selectedMessages: List<Message> = emptyList()
     )
 
 }
