@@ -38,13 +38,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.yourname.chat.data.model.message.Message
-import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -59,16 +56,13 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yourname.chat.presentation.components.ErrorScreen
 import com.yourname.chat.presentation.components.UiText
-import com.yourname.chat.presentation.viewmodel.UsersViewModel
 import com.yourname.chat.presentation.screen.chat_screen.components.ChatInputBar
 import com.yourname.chat.presentation.screen.chat_screen.components.ChatMessageItem
 import com.yourname.chat.ui.theme.PrimaryColor
-import com.yourname.chat.utils.toShortTimeString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    uvm: UsersViewModel = hiltViewModel(),
     onReturn: () -> Unit,
     onProfileClick: (String) -> Unit,
     viewModel: ChatViewModel = hiltViewModel()
@@ -77,7 +71,6 @@ fun ChatScreen(
     val clipboard = LocalClipboard.current
 
     val listState = rememberLazyListState()
-    val scope = rememberCoroutineScope()
 
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     val state = uiState.value
@@ -324,25 +317,14 @@ fun ChatScreen(
 
             ChatInputBar(onMessageSend = { text ->
                 if (state.messageInput.canSend) {
-                    if(!state.currentUser.moderation.chatAccess.banned && uvm.checkAccess(state.currentUser, state.targetUser.privacy.whoCanChat, state.targetUser)) {
-                        viewModel.sendMessage(text)
-                    }
+                    viewModel.sendMessage(text)
                 } else {
                     Toast.makeText(context, wait_seconds, Toast.LENGTH_SHORT).show()
                 }
             }, onType = {
                 viewModel.userTyping(viewModel.chatId)
             },
-                banReason =
-                    if(state.currentUser.moderation.chatAccess.banned) {
-                        stringResource(R.string.your_chat_restricted)
-                    } else {
-                        if(!uvm.checkAccess(state.currentUser, state.targetUser.privacy.whoCanChat, state.targetUser) && state.currentUser.core.uid != state.targetUser.core.uid) {
-                            stringResource(R.string.who_can_message)
-                        } else {
-                            null
-                        }
-                    }
+                banReason = state.messageInput.restrictionReason?.asString()
             )
         }
     }

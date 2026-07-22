@@ -9,6 +9,7 @@ import com.yourname.chat.data.local.MessageEntity
 import com.yourname.chat.data.model.message.Message
 import com.yourname.chat.data.model.user.User
 import com.yourname.chat.data.model.user.UserStatus
+import com.yourname.chat.domain.CheckUserAccessUseCase
 import com.yourname.chat.domain.repository.MessageRepository
 import com.yourname.chat.domain.repository.UserRepository
 import com.yourname.chat.presentation.components.UiText
@@ -36,6 +37,7 @@ class ChatViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val messageRepository: MessageRepository,
     private val userRepository: UserRepository,
+    private val checkAccessUseCase: CheckUserAccessUseCase
 ): ViewModel() {
     val chatId: String? = savedStateHandle["chatId"]
 
@@ -114,6 +116,17 @@ class ChatViewModel @Inject constructor(
                         else -> { UiText.ResourceString(R.string.offline) }
                     }
 
+                    val chatRestrictionReason: UiText? = when {
+                        domainData.current.moderation.chatAccess.banned -> {
+                            UiText.ResourceString(R.string.your_chat_restricted)
+                        }
+                        domainData.current.core.uid != chatId &&
+                                checkAccessUseCase.invoke(domainData.current, domainData.target, domainData.target.privacy.whoCanChat) -> {
+                            UiText.ResourceString(R.string.who_can_message)
+                                }
+                        else -> null
+                    }
+
                     ChatUiState.Success(
                         allMessages = domainData.allMessages,
                         chatHeader = ChatHeaderState(
@@ -122,7 +135,8 @@ class ChatViewModel @Inject constructor(
                             status = statusText
                         ),
                         messageInput = MessageInputState(
-                            canSend = localUi.canSend
+                            canSend = localUi.canSend,
+                            restrictionReason = chatRestrictionReason
                         ),
                         dialogs = localUi.currentDialog,
                         targetUser = domainData.target,
