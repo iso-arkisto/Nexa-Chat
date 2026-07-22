@@ -58,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.yourname.chat.presentation.components.ErrorScreen
+import com.yourname.chat.presentation.components.UiText
 import com.yourname.chat.presentation.viewmodel.UsersViewModel
 import com.yourname.chat.presentation.screen.chat_screen.components.ChatInputBar
 import com.yourname.chat.presentation.screen.chat_screen.components.ChatMessageItem
@@ -81,14 +82,18 @@ fun ChatScreen(
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     val state = uiState.value
 
-    val text_copied = stringResource(R.string.text_copied)
     val wait_seconds = stringResource(R.string.wait_seconds)
 
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when(event) {
                 is ChatUiEvent.ShowToast -> {
-                    Toast.makeText(context, event.text, Toast.LENGTH_SHORT).show()
+                    val toastText = when (val uiText = event.text) {
+                        is UiText.DynamicString -> uiText.value
+                        is UiText.ResourceString -> context.getString(uiText.resId, listOf(uiText.args))
+                    }
+
+                    Toast.makeText(context, toastText, Toast.LENGTH_SHORT).show()
                 }
                 is ChatUiEvent.CopyToClipboard -> {
                     clipboard.setClipEntry(

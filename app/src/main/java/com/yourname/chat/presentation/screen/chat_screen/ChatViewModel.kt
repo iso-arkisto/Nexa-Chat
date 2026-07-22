@@ -196,7 +196,7 @@ class ChatViewModel @Inject constructor(
 
         message?.let {
             sendUiEvent(ChatUiEvent.CopyToClipboard(message.text ?: ""))
-            sendUiEvent(ChatUiEvent.ShowToast("Message copied"))
+            sendUiEvent(ChatUiEvent.ShowToast(UiText.ResourceString(R.string.text_copied)))
             clearSelectedMessages()
         }
     }
@@ -221,7 +221,7 @@ class ChatViewModel @Inject constructor(
          val currentState = uiState.value as? ChatUiState.Success ?: return
 
          if(text.isBlank() || text.length>=5000) {
-             sendUiEvent(ChatUiEvent.ShowToast("Text is blank or too long"))
+             sendUiEvent(ChatUiEvent.ShowToast(UiText.DynamicString("Text is blank or too long")))
              return
          }
 
@@ -230,7 +230,7 @@ class ChatViewModel @Inject constructor(
                  _canSend.value = false
                  messageRepository.sendMessage(text, chatId!!)
                      .onFailure { error ->
-                         sendUiEvent(ChatUiEvent.ShowToast("Error: ${error.message}"))
+                         sendUiEvent(ChatUiEvent.ShowToast(UiText.DynamicString("Error: ${error.message}")))
                      }
              } finally {
                  _canSend.value = true
@@ -242,10 +242,10 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             messageRepository.deleteMessages(messages)
                 .onSuccess {
-                    sendUiEvent(ChatUiEvent.ShowToast("Messages deleted"))
+                    sendUiEvent(ChatUiEvent.ShowToast(UiText.DynamicString("Messages deleted")))
                 }
                 .onFailure { error ->
-                    sendUiEvent(ChatUiEvent.ShowToast("Error: ${error.message}"))
+                    sendUiEvent(ChatUiEvent.ShowToast(UiText.DynamicString("Error: ${error.message}")))
                 }
         }
     }
@@ -260,12 +260,12 @@ class ChatViewModel @Inject constructor(
                     item = MessageEntity(id, newText),
                     chatId = chatId!!
                 ).onSuccess {
-                    sendUiEvent(ChatUiEvent.ShowToast("Message edited"))
+                    sendUiEvent(ChatUiEvent.ShowToast(UiText.DynamicString("Message edited")))
                 }.onFailure { error ->
-                    sendUiEvent(ChatUiEvent.ShowToast("Error: ${error.message}"))
+                    sendUiEvent(ChatUiEvent.ShowToast(UiText.DynamicString("Error: ${error.message}")))
                 }
             } else {
-                sendUiEvent(ChatUiEvent.ShowToast("Text is blank or too long"))
+                sendUiEvent(ChatUiEvent.ShowToast(UiText.DynamicString("Text is blank or too long")))
             }
         }
     }
