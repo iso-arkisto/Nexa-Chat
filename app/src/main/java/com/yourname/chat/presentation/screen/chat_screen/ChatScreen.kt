@@ -75,8 +75,6 @@ fun ChatScreen(
     val uiState = viewModel.uiState.collectAsStateWithLifecycle()
     val state = uiState.value
 
-    val wait_seconds = stringResource(R.string.wait_seconds)
-
     LaunchedEffect(Unit) {
         viewModel.uiEvent.collect { event ->
             when(event) {
@@ -319,7 +317,8 @@ fun ChatScreen(
                 if (state.messageInput.canSend) {
                     viewModel.sendMessage(text)
                 } else {
-                    Toast.makeText(context, wait_seconds, Toast.LENGTH_SHORT).show()
+                    val message = context.getString(R.string.wait_seconds)
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                 }
             }, onType = {
                 viewModel.userTyping(viewModel.chatId)
