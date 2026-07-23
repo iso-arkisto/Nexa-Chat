@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -117,22 +118,26 @@ class ChatViewModel @Inject constructor(
                     }
 
                     val chatRestrictionReason: UiText? = when {
+                        domainData.current.core.uid != chatId &&
+                                !checkAccessUseCase.invoke(domainData.current, domainData.target, domainData.target.privacy.whoCanChat) -> {
+                            UiText.ResourceString(R.string.who_can_message)
+                        }
                         domainData.current.moderation.chatAccess.banned -> {
                             UiText.ResourceString(R.string.your_chat_restricted)
                         }
-                        domainData.current.core.uid != chatId &&
-                                checkAccessUseCase.invoke(domainData.current, domainData.target, domainData.target.privacy.whoCanChat) -> {
-                            UiText.ResourceString(R.string.who_can_message)
-                                }
                         else -> null
                     }
+
+                    val firstMessageSenderId = _selectedMessages.value.firstOrNull()?.senderId
+                    val isFirstMessageAuthor = firstMessageSenderId == domainData.current.core.uid
 
                     ChatUiState.Success(
                         allMessages = domainData.allMessages,
                         chatHeader = ChatHeaderState(
                             title = chatTitle,
                             avatar = userAvatar,
-                            status = statusText
+                            status = statusText,
+                            canEditMessage = chatRestrictionReason == null && isFirstMessageAuthor
                         ),
                         messageInput = MessageInputState(
                             canSend = localUi.canSend,

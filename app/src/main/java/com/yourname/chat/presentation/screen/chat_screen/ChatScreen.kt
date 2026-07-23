@@ -235,7 +235,8 @@ fun ChatScreen(
                                         )
                                     }
                                     Spacer(modifier = Modifier.width((-100).dp))
-                                    if(!state.currentUser.moderation.chatAccess.banned && state.selectedMessages[0].senderId == state.currentUser.core.uid) {
+
+                                    if(state.chatHeader.canEditMessage) {
                                         Button(
                                             onClick = { viewModel.onEditMessageDialogOpen() },
                                             modifier = Modifier
@@ -253,12 +254,9 @@ fun ChatScreen(
                                             )
                                         }
                                         Spacer(modifier = Modifier.width((-10).dp))
-
                                     }
-
-
-
                                 }
+
                                 if(state.selectedMessages.all { it.senderId == state.currentUser.core.uid || (System.currentTimeMillis() - (it.timestamp?.toDate()?.time ?: 61_000)) < 600_000 }) {
                                     Button(
                                         onClick = { viewModel.onDeleteMessageDialogOpen() },
