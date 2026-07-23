@@ -131,13 +131,22 @@ class ChatViewModel @Inject constructor(
                     val firstMessageSenderId = _selectedMessages.value.firstOrNull()?.senderId
                     val isFirstMessageAuthor = firstMessageSenderId == domainData.current.core.uid
 
+                    val canDeleteMessages = _selectedMessages.value.all { msg ->
+                        val isMyMessage = msg.senderId == domainData.current.core.uid
+                        val messageAge = System.currentTimeMillis() - (msg.timestamp?.toDate()?.time ?: 61_000)
+                        val isRecent = messageAge < 600_000
+
+                        isMyMessage || isRecent
+                    }
+
                     ChatUiState.Success(
                         allMessages = domainData.allMessages,
                         chatHeader = ChatHeaderState(
                             title = chatTitle,
                             avatar = userAvatar,
                             status = statusText,
-                            canEditMessage = chatRestrictionReason == null && isFirstMessageAuthor
+                            canEditMessage = chatRestrictionReason == null && isFirstMessageAuthor,
+                            canDeleteMessages = canDeleteMessages
                         ),
                         messageInput = MessageInputState(
                             canSend = localUi.canSend,

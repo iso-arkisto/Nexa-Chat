@@ -6,5 +6,6 @@ data class ChatHeaderState(
     val title: UiText,
     val avatar: String,
     val status: UiText,
-    val canEditMessage: Boolean
+    val canEditMessage: Boolean,
+    val canDeleteMessages: Boolean
 )

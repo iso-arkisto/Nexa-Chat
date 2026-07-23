@@ -257,7 +257,7 @@ fun ChatScreen(
                                     }
                                 }
 
-                                if(state.selectedMessages.all { it.senderId == state.currentUser.core.uid || (System.currentTimeMillis() - (it.timestamp?.toDate()?.time ?: 61_000)) < 600_000 }) {
+                                if(state.chatHeader.canDeleteMessages) {
                                     Button(
                                         onClick = { viewModel.onDeleteMessageDialogOpen() },
                                         modifier = Modifier
